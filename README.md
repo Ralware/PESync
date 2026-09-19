@@ -40,14 +40,18 @@ Requires Node.js 22 or newer.
 ## Vercel deployment
 
 1. Push this repository to GitHub and import it into Vercel.
-2. In **Project Settings → Environment Variables**, set:
+2. Set **Root Directory** to the folder containing `index.html`,
+   `package.json`, and `api/` (the repository root for this project).
+3. Set the Framework Preset to **Other** / **No Framework**. Do not configure
+   a Node server entrypoint, a custom build command, or an output directory.
+4. In **Project Settings → Environment Variables**, set:
 
    ```text
    GEMINI_API_KEY
    GEMINI_MODEL
    ```
 
-3. Deploy. Vercel serves the static frontend and the serverless function at
+5. Deploy. Vercel serves the static frontend and the serverless function at
    `/api/analyze-timetable` automatically.
 
 Do not add the Gemini key to the website, source code, or repository. The
@@ -75,5 +79,6 @@ styles.css                 dark UI styling
 dev-server.cjs             local-development static/API server (not deployed)
 lib/timetable-analysis.js  shared Gemini, multipart, and validation logic
 api/analyze-timetable.js   Vercel serverless API route
+vercel.json                function timeout only; no root rewrites
 .env.example               local configuration template
 ```
