@@ -4,7 +4,7 @@
   "private": true,
   "description": "PES timetable (vanilla HTML/CSS/JS with backend Gemini vision screenshot import)",
   "scripts": {
-    "start": "node dev-server.cjs"
+    "dev": "node dev-server.cjs"
   },
   "dependencies": {
     "busboy": "^1.6.0"

@@ -30,7 +30,7 @@ Requires Node.js 22 or newer.
 4. Run the local server:
 
    ```sh
-   npm start
+   npm run dev
    ```
 
 5. Open `http://127.0.0.1:3000`.
@@ -42,8 +42,8 @@ Requires Node.js 22 or newer.
 1. Push this repository to GitHub and import it into Vercel.
 2. Set **Root Directory** to the folder containing `index.html`,
    `package.json`, and `api/` (the repository root for this project).
-3. Set the Framework Preset to **Other** / **No Framework**. Do not configure
-   a Node server entrypoint, a custom build command, or an output directory.
+3. In Project Settings, set the Framework Preset to **Other**. Leave Build,
+   Output, and Install Command overrides off.
 4. In **Project Settings → Environment Variables**, set:
 
    ```text
