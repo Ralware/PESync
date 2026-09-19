@@ -3,7 +3,7 @@
 /* Vercel serverless entry point. The analysis implementation is shared with
  * server.js so local development and production validate the exact same
  * uploads and Gemini responses. */
-const { handleAnalyze } = require("../server");
+const { handleAnalyze } = require("../lib/timetable-analysis");
 
 module.exports = async function analyzeTimetable(req, res) {
   if (req.method !== "POST") {

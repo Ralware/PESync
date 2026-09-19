@@ -72,7 +72,8 @@ configuration is required in production.
 index.html                 UI shell
 script.js                  timetable UI, persistence, and import review
 styles.css                 dark UI styling
-server.js                  local static server and shared API implementation
+server.js                  local-development static/API server
+lib/timetable-analysis.js  shared Gemini, multipart, and validation logic
 api/analyze-timetable.js   Vercel serverless API route
 .env.example               local configuration template
 ```
