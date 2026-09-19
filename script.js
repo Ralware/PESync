@@ -784,7 +784,7 @@
    * The browser NEVER calls Gemini directly and never sees any API key.
    * It POSTs the raw image file to same-origin
    * POST /api/analyze-timetable (multipart/form-data, field "image").
-   * server.js forwards the image to Gemini, validates the structured
+   * the backend forwards the image to Gemini, validates the structured
    * JSON, and returns normalized { success, days } — or
    * { success:false, error } which is shown verbatim (server messages
    * are already user-safe and key-free).

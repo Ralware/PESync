@@ -35,7 +35,7 @@ Requires Node.js 22 or newer.
 
 5. Open `http://127.0.0.1:3000`.
 
-The local server provides the static files and `POST /api/analyze-timetable`.
+`dev-server.cjs` provides local static files and `POST /api/analyze-timetable`.
 
 ## Vercel deployment
 
@@ -72,7 +72,7 @@ configuration is required in production.
 index.html                 UI shell
 script.js                  timetable UI, persistence, and import review
 styles.css                 dark UI styling
-server.js                  local-development static/API server
+dev-server.cjs             local-development static/API server (not deployed)
 lib/timetable-analysis.js  shared Gemini, multipart, and validation logic
 api/analyze-timetable.js   Vercel serverless API route
 .env.example               local configuration template
