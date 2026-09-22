@@ -187,6 +187,10 @@
   var countdownCardEl = document.getElementById("countdown-card");
   var countdownTitleEl = document.getElementById("countdown-title");
   var countdownValueEl = document.getElementById("countdown-value");
+  var liveCardEl = document.getElementById("live-card");
+  var liveLabelEl = document.getElementById("live-label");
+  var liveValueEl = document.getElementById("live-value");
+  var liveHintEl = document.getElementById("live-hint");
   var timeEl = document.getElementById("current-time");
   var dateEl = document.getElementById("current-date");
   var timetableEl = document.getElementById("timetable");
@@ -370,6 +374,207 @@
     } else {
       countdownValueEl.textContent =
         pad(hours) + ":" + pad(minutes) + ":" + pad(seconds);
+    }
+  }
+
+  /* ---------- 7b. Live class (derived from timetable + clock) ---------- */
+  /* Slot ranges in minutes-since-midnight, parallel to timeSlots. */
+  var SLOT_RANGES = [
+    [8 * 60, 9 * 60],
+    [9 * 60, 10 * 60],
+    [10 * 60 + 30, 11 * 60 + 30],
+    [11 * 60 + 30, 12 * 60 + 30],
+    [13 * 60 + 15, 14 * 60 + 15],
+    [14 * 60 + 15, 15 * 60 + 15],
+    [15 * 60 + 15, 16 * 60],
+  ];
+
+  var JS_DAY_NAMES = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  function getSubjectLabel(id) {
+    if (!isValidSubjectId(id)) return "";
+    var def = subjectDefinitions[id];
+    return def.shortCode || def.code || def.name || "";
+  }
+
+  function formatEndsIn(minsLeft) {
+    if (minsLeft <= 0) return "ending now";
+    if (minsLeft < 60) return "ends in " + minsLeft + "m";
+    var h = Math.floor(minsLeft / 60);
+    var m = minsLeft % 60;
+    return m === 0 ? "ends in " + h + "h" : "ends in " + h + "h " + m + "m";
+  }
+
+  function formatSlotEnd(slotIndex) {
+    var parts = timeSlots[slotIndex].split("-");
+    return parts.length > 1 ? parts[1].trim() : timeSlots[slotIndex];
+  }
+
+  function formatSlotStart(slotIndex) {
+    var parts = timeSlots[slotIndex].split("-");
+    return parts.length > 0 ? parts[0].trim() : timeSlots[slotIndex];
+  }
+
+  /* Scan forward from (dayName, slotIndexExclusive) for the next placed
+   * class today, then day-by-day through Saturday, wrapping to next Monday.
+   * Sunday is always skipped (no teaching days). Returns null when the
+   * whole timetable is empty. */
+  function findNextClass(dayName, slotIndexExclusive) {
+    var startDayIdx = dayOrder.indexOf(dayName);
+    var hasAnyClass = dayOrder.some(function (d) {
+      return timetable[d].some(isValidSubjectId);
+    });
+    if (!hasAnyClass) return null;
+    /* Rest of today. */
+    if (startDayIdx !== -1) {
+      for (var s = slotIndexExclusive + 1; s < timeSlots.length; s++) {
+        if (isValidSubjectId(timetable[dayName][s])) {
+          return { day: dayName, slot: s, id: timetable[dayName][s], today: true };
+        }
+      }
+      /* Later this week (Tue..Sat). */
+      for (var d = startDayIdx + 1; d < dayOrder.length; d++) {
+        for (var k = 0; k < timeSlots.length; k++) {
+          if (isValidSubjectId(timetable[dayOrder[d]][k])) {
+            return { day: dayOrder[d], slot: k, id: timetable[dayOrder[d]][k], today: false };
+          }
+        }
+      }
+    }
+    /* Wrap to next week (Monday onward). */
+    for (var w = 0; w < dayOrder.length; w++) {
+      for (var j = 0; j < timeSlots.length; j++) {
+        if (isValidSubjectId(timetable[dayOrder[w]][j])) {
+          return { day: dayOrder[w], slot: j, id: timetable[dayOrder[w]][j], today: false };
+        }
+      }
+    }
+    return null;
+  }
+
+  function setLiveCard(isLive, label, value, hint) {
+    if (!liveValueEl) return;
+    liveLabelEl.textContent = label;
+    liveValueEl.textContent = value;
+    liveHintEl.textContent = hint;
+    if (liveCardEl) liveCardEl.classList.toggle("is-live", !!isLive);
+  }
+
+  function updateLiveClass(nowOverride) {
+    if (!liveValueEl) return;
+    var now = nowOverride instanceof Date ? nowOverride : new Date();
+    var dayName = JS_DAY_NAMES[now.getDay()];
+    var mins = now.getHours() * 60 + now.getMinutes();
+
+    /* Sunday: no teaching days. */
+    if (dayName === "Sunday") {
+      var nextAfterWeekend = findNextClass("Saturday", timeSlots.length);
+      if (!nextAfterWeekend) {
+        setLiveCard(false, "Live Class", "No Schedule", "Click any slot below to add a class");
+      } else {
+        setLiveCard(
+          false,
+          "Live Class",
+          "Weekend",
+          "Next: " + getSubjectLabel(nextAfterWeekend.id) + " · " + nextAfterWeekend.day + " " + formatSlotStart(nextAfterWeekend.slot),
+        );
+      }
+      return;
+    }
+
+    var dayIdx = dayOrder.indexOf(dayName);
+    if (dayIdx === -1) return;
+    var today = timetable[dayName] || [];
+
+    /* Inside a class slot? */
+    var currentSlot = -1;
+    for (var i = 0; i < SLOT_RANGES.length; i++) {
+      if (mins >= SLOT_RANGES[i][0] && mins < SLOT_RANGES[i][1]) {
+        currentSlot = i;
+        break;
+      }
+    }
+
+    if (currentSlot !== -1) {
+      var currentId = today[currentSlot];
+      if (isValidSubjectId(currentId)) {
+        var def = subjectDefinitions[currentId];
+        var minsLeft = SLOT_RANGES[currentSlot][1] - mins;
+        var hint =
+          formatDisplayText(def.name) +
+          " · till " + formatSlotEnd(currentSlot) +
+          " (" + formatEndsIn(minsLeft) + ")";
+        if (def.faculty) hint += " · " + formatDisplayText(def.faculty);
+        setLiveCard(true, "Live Now", getSubjectLabel(currentId), hint);
+        return;
+      }
+      /* In-slot but empty = free period. */
+      var nextInSlot = findNextClass(dayName, currentSlot);
+      if (nextInSlot && nextInSlot.today) {
+        setLiveCard(false, "Live Class", "Free Period", "Next: " + getSubjectLabel(nextInSlot.id) + " at " + formatSlotStart(nextInSlot.slot));
+      } else if (nextInSlot) {
+        setLiveCard(false, "Live Class", "Free Period", "Next: " + getSubjectLabel(nextInSlot.id) + " · " + nextInSlot.day + " " + formatSlotStart(nextInSlot.slot));
+      } else {
+        setLiveCard(false, "Live Class", "Free Period", "No more classes scheduled");
+      }
+      return;
+    }
+
+    /* Between slots = scheduled break (10:00-10:30, 12:30-13:15) or
+     * outside teaching hours. Distinguish by checking whether we are
+     * inside the teaching day span. */
+    var dayStart = SLOT_RANGES[0][0];
+    var dayEnd = SLOT_RANGES[SLOT_RANGES.length - 1][1];
+    var next = findNextClass(dayName, -1);
+    if (!next) {
+      setLiveCard(false, "Live Class", "No Schedule", "Click any slot below to add a class");
+      return;
+    }
+    if (mins < dayStart) {
+      var firstToday = null;
+      for (var f = 0; f < timeSlots.length; f++) {
+        if (isValidSubjectId(today[f])) {
+          firstToday = { slot: f, id: today[f] };
+          break;
+        }
+      }
+      if (firstToday) {
+        setLiveCard(false, "Live Class", "Classes start " + formatSlotStart(firstToday.slot), "First: " + getSubjectLabel(firstToday.id));
+      } else if (next) {
+        setLiveCard(false, "Live Class", "No classes today", "Next: " + getSubjectLabel(next.id) + " · " + next.day + " " + formatSlotStart(next.slot));
+      }
+      return;
+    }
+    if (mins >= dayEnd) {
+      if (next && !next.today) {
+        setLiveCard(false, "Live Class", "Day Over", "Next: " + getSubjectLabel(next.id) + " · " + next.day + " " + formatSlotStart(next.slot));
+      } else {
+        setLiveCard(false, "Live Class", "Day Over", "No more classes scheduled");
+      }
+      return;
+    }
+    /* Mid-day gap = break. */
+    var upcoming = findNextClass(dayName, -1);
+    /* Find the slot we just passed to anchor the break message. */
+    var passedSlot = -1;
+    for (var b = 0; b < SLOT_RANGES.length; b++) {
+      if (mins >= SLOT_RANGES[b][1]) passedSlot = b;
+    }
+    var nextToday = findNextClass(dayName, passedSlot);
+    if (nextToday && nextToday.today) {
+      setLiveCard(false, "Live Class", "Break", "Next: " + getSubjectLabel(nextToday.id) + " at " + formatSlotStart(nextToday.slot));
+    } else if (upcoming && !upcoming.today) {
+      setLiveCard(false, "Live Class", "Break", "Next: " + getSubjectLabel(upcoming.id) + " · " + upcoming.day + " " + formatSlotStart(upcoming.slot));
+    } else {
+      setLiveCard(false, "Live Class", "Break", "No more classes today");
     }
   }
 
@@ -643,6 +848,8 @@
 
       timetableEl.appendChild(row);
     });
+
+    updateLiveClass();
   }
 
   /* ---------- 11. Subject editor modal ---------- */
@@ -1483,8 +1690,10 @@
   updateCountdown();
   renderMetadata();
   renderTimetable();
+  updateLiveClass();
   setInterval(updateClock, 1000);
   setInterval(updateCountdown, 1000);
+  setInterval(updateLiveClass, 15000);
   setInterval(updateDate, DATE_REFRESH_MS);
 
   void escapeHtml;

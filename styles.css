@@ -105,6 +105,54 @@ body {
   color: var(--faint);
   letter-spacing: 0.04em;
 }
+/* ---------- Live class card (top section) ---------- */
+.live-card {
+  border-left: 2px solid transparent;
+}
+.live-card .info-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.live-card .info-label::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--faint);
+  flex: 0 0 auto;
+}
+.live-card.is-live {
+  background: rgb(0 255 170 / 5%);
+  border-left-color: var(--success-color);
+}
+.live-card.is-live .info-label {
+  color: var(--success-color);
+}
+.live-card.is-live .info-label::before {
+  background: var(--success-color);
+  box-shadow: 0 0 8px var(--success-color);
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+.live-card.is-live .info-value {
+  color: var(--success-color);
+}
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-card.is-live .info-label::before {
+    animation: none;
+  }
+}
 
 /* ---------- Modals (countdown + subject editor, shared) ---------- */
 .modal-backdrop {
