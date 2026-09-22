@@ -478,7 +478,7 @@
     if (dayName === "Sunday") {
       var nextAfterWeekend = findNextClass("Saturday", timeSlots.length);
       if (!nextAfterWeekend) {
-        setLiveCard(false, "Live Class", "No Schedule", "Click any slot below to add a class");
+        setLiveCard(false, "Live Class", "—", "");
       } else {
         setLiveCard(
           false,
@@ -535,7 +535,7 @@
     var dayEnd = SLOT_RANGES[SLOT_RANGES.length - 1][1];
     var next = findNextClass(dayName, -1);
     if (!next) {
-      setLiveCard(false, "Live Class", "No Schedule", "Click any slot below to add a class");
+      setLiveCard(false, "Live Class", "—", "");
       return;
     }
     if (mins < dayStart) {
@@ -786,7 +786,8 @@
       if (subject.faculty) body.appendChild(faculty);
     } else {
       body.className = "slot-body empty editable";
-      body.textContent = "No Schedule";
+      body.textContent = "";
+      body.setAttribute("aria-label", "Empty slot — click to add a class");
     }
 
     body.setAttribute("tabindex", "0");
